@@ -45,6 +45,27 @@
             object-fit: cover;
             display: block;
             border: 1px solid #eee;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .painting-thumb:hover {
+            transform: scale(1.05);
+            border-color: #3b82f6;
+        }
+
+        /* Locked state styling */
+        .painting-thumb.locked {
+            border: 3px solid #3b82f6;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        @media print {
+            .painting-thumb {
+                transform: none !important;
+                border: 1px solid #eee !important;
+                box-shadow: none !important;
+            }
         }
     </style>
 </head>
@@ -53,10 +74,10 @@
     <div class="no-print p-4 bg-blue-50 border-b border-blue-200 text-center flex flex-col items-center gap-2">
         <p class="text-sm text-blue-800">
             <strong>Dimensions:</strong> 0.7" x 1.0" images with 1" spacing.
-            <br>Set margins to <strong>"None"</strong> in your print dialog.
+            <br>Click an image to <strong>Lock</strong> it, then <strong>Randomize</strong> the rest.
         </p>
         <div class="flex gap-2">
-            <button onclick="location.reload()" class="bg-gray-600 text-white px-4 py-2 rounded shadow hover:bg-gray-700 transition">
+            <button id="randomize-btn" class="bg-gray-600 text-white px-4 py-2 rounded shadow hover:bg-gray-700 transition">
                 Randomize
             </button>
             <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition">
@@ -68,39 +89,54 @@
     <div class="print-container" id="gallery"></div>
 
     <script>
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-
-        // Increase pool size to ensure variety for a full page
-        const poolSize = 100;
-        const imagePool = [];
-        while(imagePool.length < poolSize){
-            const r = Math.floor(Math.random() * 1000) + 1;
-            if(!imagePool.includes(r)) imagePool.push(r);
-        }
-
         const gallery = document.getElementById('gallery');
-        // 4 columns x 5 rows = 20 slots to fill 8.5x11 with 1" margins/gaps
-        const totalSlots = 20; 
-        const shuffledPool = shuffle(imagePool);
-
+        const randomizeBtn = document.getElementById('randomize-btn');
+        const totalSlots = 20;
+        
+        // Initialize slots
         for (let i = 0; i < totalSlots; i++) {
-            const id = shuffledPool[i];
             const img = document.createElement('img');
             img.className = 'painting-thumb';
-            img.src = `https://picsum.photos/id/${id}/200/300?t=${Date.now()}`;
+            img.dataset.index = i;
+            img.onclick = () => img.classList.toggle('locked');
             
             img.onerror = function() {
-                this.src = `https://picsum.photos/200/300?random=${Math.random()}`;
+                const fallbackId = Math.floor(Math.random() * 1000) + 1;
+                this.src = `https://picsum.photos/id/${fallbackId}/200/300`;
             };
             
             gallery.appendChild(img);
         }
+
+        function randomize() {
+            const imgs = document.querySelectorAll('.painting-thumb');
+            
+            // To avoid duplicates, we'll keep track of currently used IDs
+            const usedIds = new Set();
+            imgs.forEach(img => {
+                if (img.classList.contains('locked') && img.dataset.id) {
+                    usedIds.add(img.dataset.id);
+                }
+            });
+
+            imgs.forEach(img => {
+                if (!img.classList.contains('locked')) {
+                    let newId;
+                    do {
+                        newId = Math.floor(Math.random() * 1000) + 1;
+                    } while (usedIds.has(newId.toString()));
+                    
+                    usedIds.add(newId.toString());
+                    img.dataset.id = newId;
+                    img.src = `https://picsum.photos/id/${newId}/200/300?t=${Date.now()}`;
+                }
+            });
+        }
+
+        randomizeBtn.onclick = randomize;
+
+        // Initial load
+        randomize();
     </script>
 </body>
 </html>
