@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Famous Paintings 0.7x1.0 Print Sheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            @page {
+                size: letter;
+                margin: 0;
+            }
+            body {
+                background: white !important;
+                -webkit-print-color-adjust: exact;
+                margin: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        .print-container {
+            width: 8.5in;
+            height: 11in;
+            padding: 1in;
+            box-sizing: border-box;
+            display: grid;
+            /* 0.7" images + 1" gaps = 4 columns across */
+            grid-template-columns: repeat(4, 0.7in);
+            /* 1.0" images + 1" gaps = 5 rows down */
+            grid-auto-rows: 1in;
+            column-gap: 1in;
+            row-gap: 1in;
+            margin: 0 auto;
+            background: white;
+            justify-content: center;
+            align-content: start;
+        }
+
+        .painting-thumb {
+            width: 0.7in;
+            height: 1in;
+            object-fit: cover;
+            display: block;
+            border: 1px solid #eee;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    
+    <div class="no-print p-4 bg-blue-50 border-b border-blue-200 text-center flex flex-col items-center gap-2">
+        <p class="text-sm text-blue-800">
+            <strong>Dimensions:</strong> 0.7" x 1.0" images with 1" spacing.
+            <br>Set margins to <strong>"None"</strong> in your print dialog.
+        </p>
+        <div class="flex gap-2">
+            <button onclick="location.reload()" class="bg-gray-600 text-white px-4 py-2 rounded shadow hover:bg-gray-700 transition">
+                Randomize
+            </button>
+            <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition">
+                Print Sheet
+            </button>
+        </div>
+    </div>
+
+    <div class="print-container" id="gallery"></div>
+
+    <script>
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Increase pool size to ensure variety for a full page
+        const poolSize = 100;
+        const imagePool = [];
+        while(imagePool.length < poolSize){
+            const r = Math.floor(Math.random() * 1000) + 1;
+            if(!imagePool.includes(r)) imagePool.push(r);
+        }
+
+        const gallery = document.getElementById('gallery');
+        // 4 columns x 5 rows = 20 slots to fill 8.5x11 with 1" margins/gaps
+        const totalSlots = 20; 
+        const shuffledPool = shuffle(imagePool);
+
+        for (let i = 0; i < totalSlots; i++) {
+            const id = shuffledPool[i];
+            const img = document.createElement('img');
+            img.className = 'painting-thumb';
+            img.src = `https://picsum.photos/id/${id}/200/300?t=${Date.now()}`;
+            
+            img.onerror = function() {
+                this.src = `https://picsum.photos/200/300?random=${Math.random()}`;
+            };
+            
+            gallery.appendChild(img);
+        }
+    </script>
+</body>
+</html>
